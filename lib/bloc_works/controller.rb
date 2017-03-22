@@ -11,6 +11,7 @@ module BlocWorks
       template = File.read(filename)
       eruby = Erubis::Eruby.new(template)
       eruby.result(locals.merge(env: @env))
+      puts env['Request_Method']
     end
 
     def controller_dir
