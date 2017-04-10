@@ -1,18 +1,18 @@
 require "bloc_works/version"
+require "bloc_works/router"
+require "bloc_works/utility"
+require "bloc_works/dependencies"
 require "bloc_works/controller"
 
 module BlocWorks
   class Application
-    #call returns an array containing an HTTP status code, an HTTP header, and the text to display in the Browser
     def call(env)
-      [200, {'Content-Type' => 'text/html'}, ["Hello Blocheads!"]]
-      # response = fav_icon(env)
-      #
-      # if response.nil?
-      # end
-      # if requesting favicon.ico - return fav_icon response
-      # otherwise, execute action on controller and return result
-    end
+      if env['PATH_INFO'] == '/favicon.ico'
+        return [404, {'Content-Type' => 'text/html'}, []]
+      end
 
+      rack_app = get_rack_app(env)
+      rack_app.call(env)
+    end
   end
 end
