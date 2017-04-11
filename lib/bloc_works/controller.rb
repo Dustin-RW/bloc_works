@@ -30,14 +30,23 @@ module BlocWorks
       request.params.merge(@routing_params)
     end
 
+
     def response(text, status = 200, headers = {})
       raise "Cannot respond multiple times" unless @response.nil?
       @response = Rack::Response.new([text].flatten, status, headers)
     end
 
+    # New Render method
     def render(*args)
-      response(create_reponse_array(*args))
+			if args[0].nil? || args[0].is_a?(Hash)
+				calling_method = caller[0][/`.*'/][1..-2]
+				args.insert(0, calling_method)
+				response(create_response_array(*args))
+			else
+				response(create_response_array(*args))
+			end
     end
+
 
     def get_response
       @response
@@ -48,16 +57,48 @@ module BlocWorks
     end
 
     def create_reponse_array(view, locals = {})
+
       filename = File.join("app", "views", controller_dir, "#{view}.html.erb")
+
       template = File.read(filename)
       eruby = Erubis::Eruby.new(template)
+
+		  # get instance variables from controller
+      self.instance_variables.each do |inst_var|
+        inst_var_value = self.instance_variable_get(inst_var)
+        # set them as eruby instance variables
+        eruby.instance_variable_set(inst_var, inst_var_value)
+      end
+
       eruby.result(locals.merge(env: @env))
     end
 
+    # convert a string like LabelsController to labels
     def controller_dir
       klass = self.class.to_s
       klass.slice!("Controller")
       BlocWorks.snake_case(klass)
     end
+
+    def redirect_to(target, status="302", routing_params={})
+			if status == "302"
+				if self.respond_to? target
+					routing_params['controller'] = self.class.to_s.split('Controller')[0].downcase
+					routing_params['action'] = target.to_s
+					dispatch(target, routing_params)
+				elsif target =~ /^([^#]+)#([^#]+)$/
+					controller = $1
+					action = $2
+					routing_params = {"action" => action, "controller" => controller}
+					name = controller.capitalize
+					controllerName = Object.const_get("#{name}Controller")
+					controllerName.dispatch(action, routing_params)
+				else
+					response("", "302", {"Location" => target})
+				end
+			else
+				puts "Incorrect status code supplied for redirect"
+			end
+		end
   end
 end

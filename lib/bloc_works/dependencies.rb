@@ -1,4 +1,3 @@
-require_relative 'utility'
 
 class Object
   def self.const_missing(const)
