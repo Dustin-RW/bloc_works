@@ -1,3 +1,4 @@
+require "bloc_works/utility"
 
 class Object
   def self.const_missing(const)

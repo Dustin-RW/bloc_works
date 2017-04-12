@@ -18,6 +18,7 @@ module BlocWorks
       end
     end
 
+    #invoke controller action
     def self.action(action, response = {})
       proc { |env| self.new(env).dispatch(action, response) }
     end
@@ -36,15 +37,8 @@ module BlocWorks
       @response = Rack::Response.new([text].flatten, status, headers)
     end
 
-    # New Render method
     def render(*args)
-			if args[0].nil? || args[0].is_a?(Hash)
-				calling_method = caller[0][/`.*'/][1..-2]
-				args.insert(0, calling_method)
-				response(create_response_array(*args))
-			else
-				response(create_response_array(*args))
-			end
+			response(create_response_array(*args))
     end
 
 
@@ -56,7 +50,7 @@ module BlocWorks
       !@response.nil?
     end
 
-    def create_reponse_array(view, locals = {})
+    def create_response_array(view, locals = {})
 
       filename = File.join("app", "views", controller_dir, "#{view}.html.erb")
 
@@ -65,9 +59,11 @@ module BlocWorks
 
 		  # get instance variables from controller
       self.instance_variables.each do |inst_var|
+        puts "inst_var : #{inst_var}"
         inst_var_value = self.instance_variable_get(inst_var)
         # set them as eruby instance variables
-        eruby.instance_variable_set(inst_var, inst_var_value)
+        # eruby.instance_variable_set(inst_var, inst_var_value)
+        locals[inst_var[1..-1]] = inst_var_value
       end
 
       eruby.result(locals.merge(env: @env))
@@ -80,7 +76,8 @@ module BlocWorks
       BlocWorks.snake_case(klass)
     end
 
-    def redirect_to(target, status="302", routing_params={})
+    #implent redirect for controller actions
+    def redirect(target, status="302", routing_params={})
 			if status == "302"
 				if self.respond_to? target
 					routing_params['controller'] = self.class.to_s.split('Controller')[0].downcase
