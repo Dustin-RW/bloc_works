@@ -59,7 +59,6 @@ module BlocWorks
 
 		  # get instance variables from controller
       self.instance_variables.each do |inst_var|
-        puts "inst_var : #{inst_var}"
         inst_var_value = self.instance_variable_get(inst_var)
         # set them as eruby instance variables
         # eruby.instance_variable_set(inst_var, inst_var_value)
@@ -76,7 +75,7 @@ module BlocWorks
       BlocWorks.snake_case(klass)
     end
 
-    #implent redirect for controller actions
+    # implent redirect for controller actions
     def redirect(target, status="302", routing_params={})
 			if status == "302"
 				if self.respond_to? target

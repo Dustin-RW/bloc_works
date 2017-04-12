@@ -39,42 +39,42 @@ module BlocWorks
 
     def map(url, *args)
       # refactored #map
-  		# options, destination = map_options(*args)
-  		# regex, vars = map_parts(url)
+  		options, destination = map_options(*args)
+  		regex, vars = map_parts(url)
+
+  		@rules.push({ regex: Regexp.new("^/#{regex}$"),
+  									vars: vars,
+  									destination: destination,
+  									options: options})
+      # options = {}
+      # options = args.pop if args[-1].is_a?(Hash)
+      # options[:default] ||= {}
       #
-  		# @rules.push({ regex: Regexp.new("^/#{regex}$"),
-  		# 							vars: vars,
-  		# 							destination: destination,
-  		# 							options: options})
-      options = {}
-      options = args.pop if args[-1].is_a?(Hash)
-      options[:default] ||= {}
-
-      destination = nil
-      destination = args.pop if args.size > 0
-      raise "Too many args!" if args.size > 0
-
-      parts = url.split("/")
-      parts.reject! { |part| part.empty? }
-
-      vars, regex_parts = [], []
-
-      parts.each do |part|
-        case part[0]
-        when ":"
-          vars << part[1..-1]
-          regex_parts << "([a-zA-Z0-9]+)"
-        when "*"
-          vars << part[1..-1]
-          regex_parts << "(.*)"
-        else
-          regex_parts << part
-        end
-      end
-      regex = regex_parts.join("/")
-      @rules.push({ regex: Regexp.new("^/#{regex}$"),
-                    vars: vars, destination: destination,
-                    options: options })
+      # destination = nil
+      # destination = args.pop if args.size > 0
+      # raise "Too many args!" if args.size > 0
+      #
+      # parts = url.split("/")
+      # parts.reject! { |part| part.empty? }
+      #
+      # vars, regex_parts = [], []
+      #
+      # parts.each do |part|
+      #   case part[0]
+      #   when ":"
+      #     vars << part[1..-1]
+      #     regex_parts << "([a-zA-Z0-9]+)"
+      #   when "*"
+      #     vars << part[1..-1]
+      #     regex_parts << "(.*)"
+      #   else
+      #     regex_parts << part
+      #   end
+      # end
+      # regex = regex_parts.join("/")
+      # @rules.push({ regex: Regexp.new("^/#{regex}$"),
+      #               vars: vars, destination: destination,
+      #               options: options })
   	end
 
     def map_options(*args)
@@ -115,35 +115,35 @@ module BlocWorks
 
     def look_up_url(url)
       # refactored #look_up
-  	  # @rules.each do |rule|
-  		#   rule_match = rule[:regex].match(url)
+  	  @rules.each do |rule|
+  		  rule_match = rule[:regex].match(url)
+
+  			if rule_match
+  				options = rule[:options]
+  				params = set_params(options, rule_match, rule)
+  				return set_destination(rule, params)
+  			end
+  		end
+      # @rules.each do |rule|
+      #   rule_match = rule[:regex].match(url)
       #
-  		# 	if rule_match
-  		# 		options = rule[:options]
-  		# 		params = set_params(options, rule_match, rule)
-  		# 		return set_destination(rule, params)
-  		# 	end
-  		# end
-      @rules.each do |rule|
-        rule_match = rule[:regex].match(url)
-
-        if rule_match
-          options = rule[:options]
-          params = options[:default].dup
-
-          rule[:vars].each_with_index do |var, index|
-            params[var] = rule_match.captures[index]
-          end
-
-          if rule[:destination]
-            return get_destination(rule[:destination], params)
-          else
-            controller = params["controller"]
-            action = params["action"]
-            return get_destination("#{controller}##{action}", params)
-          end
-        end
-      end
+      #   if rule_match
+      #     options = rule[:options]
+      #     params = options[:default].dup
+      #
+      #     rule[:vars].each_with_index do |var, index|
+      #       params[var] = rule_match.captures[index]
+      #     end
+      #
+      #     if rule[:destination]
+      #       return get_destination(rule[:destination], params)
+      #     else
+      #       controller = params["controller"]
+      #       action = params["action"]
+      #       return get_destination("#{controller}##{action}", params)
+      #     end
+      #   end
+      # end
   	end
 
     def set_params(options, rule_match, rule)
@@ -178,6 +178,7 @@ module BlocWorks
       raise "Destination not found: #{destination}"
     end
 
+    # map through actions and display to browser within app.route do
     def resources(controller)
   		actions = create_resourceful_array
   		actions.each do |action|
@@ -185,6 +186,7 @@ module BlocWorks
   		end
   	end
 
+    # resourceful routes for config.ru ie controller/delete
   	def create_resourceful_array
   		actions = []
   		actions << [":controller", default: {"action" => "index", "request_method" => "get"}]
